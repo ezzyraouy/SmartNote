@@ -1,3 +1,4 @@
+//notes.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -9,9 +10,23 @@ export class NotesService {
   constructor(
     @InjectRepository(Note)
     private notesRepository: Repository<Note>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) {}
+  
+  async createNote(
+    userPayload: any,
+    title: string,
+    content: string,
+  ): Promise<Note> {
+    // userPayload is from JWT, contains user id as 'sub'
+    const user = await this.userRepository.findOne({
+      where: { id: userPayload.sub },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
-  async createNote(user: User, title: string, content: string): Promise<Note> {
     const note = this.notesRepository.create({ title, content, user });
     return await this.notesRepository.save(note);
   }
@@ -19,6 +34,7 @@ export class NotesService {
   async getUserNotes(userId: number): Promise<Note[]> {
     return await this.notesRepository.find({
       where: { user: { id: userId } },
+      relations: ['user'], // important to join user relation
       order: { updatedAt: 'DESC' },
     });
   }
@@ -26,6 +42,7 @@ export class NotesService {
   async getNoteById(id: number, userId: number): Promise<Note> {
     const note = await this.notesRepository.findOne({
       where: { id, user: { id: userId } },
+      relations: ['user'],
     });
     if (!note) {
       throw new NotFoundException('Note not found');
@@ -39,16 +56,20 @@ export class NotesService {
     updates: { title?: string; content?: string },
   ): Promise<Note> {
     const note = await this.getNoteById(id, userId);
-    if (updates.title) note.title = updates.title;
-    if (updates.content) note.content = updates.content;
+    if (updates.title !== undefined) note.title = updates.title;
+    if (updates.content !== undefined) note.content = updates.content;
     return await this.notesRepository.save(note);
   }
 
   async deleteNote(id: number, userId: number): Promise<void> {
-    const result = await this.notesRepository.delete({
-      id,
-      user: { id: userId },
-    });
+    const result = await this.notesRepository
+      .createQueryBuilder()
+      .delete()
+      .from(Note)
+      .where('id = :id', { id })
+      .andWhere('user_id = :userId', { userId })
+      .execute();
+
     if (result.affected === 0) {
       throw new NotFoundException('Note not found');
     }

@@ -1,4 +1,4 @@
-// src/users/users.controller.ts
+// users.controller.ts
 import { Body, Controller, Get, Post, Put, Delete, Request, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';

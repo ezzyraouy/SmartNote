@@ -1,8 +1,15 @@
-// src/users/user.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert ,OneToMany  } from 'typeorm';
+//user.entity.ts
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  BeforeInsert,
+  OneToMany,
+} from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { Note } from '../notes/note.entity';
-@Entity()
+
+@Entity('users')
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
@@ -15,7 +22,17 @@ export class User {
 
   @OneToMany(() => Note, note => note.user)
   notes: Note[];
-  
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  created_at: Date;
+
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    onUpdate: 'CURRENT_TIMESTAMP',
+  })
+  updated_at: Date;
+
   @BeforeInsert()
   async hashPassword() {
     this.password = await bcrypt.hash(this.password, 10);

@@ -1,7 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+//note.entity.ts
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { User } from '../users/user.entity';
 
-@Entity()
+@Entity('notes') // <-- Explicitly set the table name
 export class Note {
   @PrimaryGeneratedColumn()
   id: number;
@@ -15,9 +22,14 @@ export class Note {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    onUpdate: 'CURRENT_TIMESTAMP',
+  })
   updatedAt: Date;
 
   @ManyToOne(() => User, user => user.notes)
+  @JoinColumn({ name: 'user_id' }) // <-- Set foreign key column name
   user: User;
 }
