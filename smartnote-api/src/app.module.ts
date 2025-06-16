@@ -1,10 +1,11 @@
-// src/app.module.ts
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { User } from './users/user.entity';
+import { NotesModule } from './notes/notes.module';
+import { Note } from './notes/note.entity';
 
 @Module({
   imports: [
@@ -17,12 +18,13 @@ import { User } from './users/user.entity';
         username: process.env.DB_USERNAME,
         password: process.env.DB_PASSWORD,
         database: process.env.DB_NAME,
-        entities: [User],
-        synchronize: process.env.NODE_ENV !== 'production', // Auto-create tables (disable in prod)
+        entities: [User, Note],
+        synchronize: process.env.NODE_ENV !== 'production',
       }),
     }),
     AuthModule,
     UsersModule,
+    NotesModule, // Add NotesModule here
   ],
 })
 export class AppModule {}
