@@ -9,22 +9,32 @@ import {
   Param,
   UseGuards,
   Request,
+  NotFoundException,
 } from '@nestjs/common';
 import { NotesService } from './notes.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Note } from './note.entity';
+import { UsersService } from '../users/users.service';
 
 @Controller('notes')
 @UseGuards(JwtAuthGuard)
 export class NotesController {
-  constructor(private readonly notesService: NotesService) {}
+  constructor(
+    private readonly notesService: NotesService,
+    private readonly usersService: UsersService,
+  ) {}
 
   @Post()
   async createNote(
     @Request() req,
     @Body() body: { title: string; content: string },
   ): Promise<Note> {
-    return this.notesService.createNote(req.user, body.title, body.content);
+    // Fetch full user entity from DB
+    const user = await this.usersService.findById(req.user.sub);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return this.notesService.createNote(user, body.title, body.content);
   }
 
   @Get()

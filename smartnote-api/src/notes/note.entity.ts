@@ -29,7 +29,7 @@ export class Note {
   })
   updatedAt: Date;
 
-  @ManyToOne(() => User, user => user.notes)
-  @JoinColumn({ name: 'user_id' }) // <-- Set foreign key column name
+  @ManyToOne(() => User, (user) => user.notes, { eager: true })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 }

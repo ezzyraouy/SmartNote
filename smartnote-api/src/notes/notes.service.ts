@@ -13,20 +13,8 @@ export class NotesService {
     @InjectRepository(User)
     private userRepository: Repository<User>,
   ) {}
-  
-  async createNote(
-    userPayload: any,
-    title: string,
-    content: string,
-  ): Promise<Note> {
-    // userPayload is from JWT, contains user id as 'sub'
-    const user = await this.userRepository.findOne({
-      where: { id: userPayload.sub },
-    });
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
 
+  async createNote(user: User, title: string, content: string): Promise<Note> {
     const note = this.notesRepository.create({ title, content, user });
     return await this.notesRepository.save(note);
   }

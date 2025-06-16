@@ -27,7 +27,7 @@ export class UsersService {
   async update(
     id: number,
     newEmail?: string,
-    newPassword?: string
+    newPassword?: string,
   ): Promise<User> {
     const user = await this.findById(id);
     if (!user) throw new NotFoundException('User not found');
