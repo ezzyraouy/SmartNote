@@ -22,7 +22,7 @@ export class NotesService {
   async getUserNotes(userId: number): Promise<Note[]> {
     return await this.notesRepository.find({
       where: { user: { id: userId } },
-      relations: ['user'], // important to join user relation
+      relations: ['user'], 
       order: { updatedAt: 'DESC' },
     });
   }
@@ -55,7 +55,6 @@ export class NotesService {
       .delete()
       .from(Note)
       .where('id = :id', { id })
-      .andWhere('user_id = :userId', { userId })
       .execute();
 
     if (result.affected === 0) {

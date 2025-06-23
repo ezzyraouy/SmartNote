@@ -24,6 +24,8 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   late TextEditingController _contentController;
   bool _isSaving = false;
   bool _isDeleting = false;
+  bool _isGettingSuggestion = false;
+  List<String> _aiSuggestions = [];
 
   @override
   void initState() {
@@ -84,10 +86,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -122,16 +121,68 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     }
   }
 
+  Future<void> _fetchAISuggestion() async {
+    setState(() {
+      _isGettingSuggestion = true;
+      _aiSuggestions = [];
+    });
+
+    try {
+      final notesService = Provider.of<NotesService>(context, listen: false);
+      final suggestion = await notesService.getSuggestionFromGemini(
+        _contentController.text,
+      );
+
+      // Parse the response to get multiple suggestions
+      final suggestions = suggestion
+          .split('\n')
+          .where((s) => s.trim().isNotEmpty)
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
+
+      if (mounted) {
+        setState(() => _aiSuggestions = suggestions);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('AI Error: ${e.toString()}'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isGettingSuggestion = false);
+    }
+  }
+
+  // void _applySuggestion(String suggestion) {
+  //   final currentText = _contentController.text;
+  //   final newText = currentText.isEmpty
+  //       ? suggestion
+  //       : '$currentText\n$suggestion';
+  //   _contentController.text = newText;
+  //   setState(() {
+  //     _aiSuggestions = []; // Clear suggestions after selection
+  //   });
+  // }
+  void _applySuggestion(String suggestion) {
+    _contentController.text =
+        suggestion;
+    setState(() {
+      _aiSuggestions = [];
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isEditing = widget.noteId != null;
 
     return WillPopScope(
-      onWillPop: () async {
-        if (_isSaving || _isDeleting) return false;
-        return true;
-      },
+      onWillPop: () async => !_isSaving && !_isDeleting,
       child: Scaffold(
         backgroundColor: const Color(0xFFF0F4F8),
         appBar: AppBar(
@@ -198,6 +249,95 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                   ),
                   style: const TextStyle(fontSize: 16),
                 ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 45,
+                  child: ElevatedButton.icon(
+                    icon: _isGettingSuggestion
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.auto_awesome),
+                    label: Text(
+                      _isGettingSuggestion
+                          ? 'Generating...'
+                          : 'Suggest with AI',
+                    ),
+                    onPressed: _isGettingSuggestion ? null : _fetchAISuggestion,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                if (_aiSuggestions.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'AI Suggestions:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.deepPurple,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _aiSuggestions.map((suggestion) {
+                          return InkWell(
+                            borderRadius: BorderRadius.circular(16),
+                            onTap: () => _applySuggestion(suggestion),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.deepPurple.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Colors.deepPurple.withOpacity(0.3),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.lightbulb_outline,
+                                    size: 16,
+                                    color: Colors.deepPurple,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      suggestion,
+                                      style: const TextStyle(
+                                        color: Colors.deepPurple,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 30),
                 SizedBox(
                   width: double.infinity,

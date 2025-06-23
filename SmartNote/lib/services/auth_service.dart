@@ -77,6 +77,8 @@ class AuthService extends ChangeNotifier {
 
     if (response.statusCode == 200) {
       _email = email;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('email', _email!);
       notifyListeners();
       return true;
     } else {
