@@ -10,6 +10,7 @@ import {
   UseGuards,
   Request,
   NotFoundException,
+  Query
 } from '@nestjs/common';
 import { NotesService } from './notes.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -59,5 +60,9 @@ export class NotesController {
   @Delete(':id')
   async deleteNote(@Request() req, @Param('id') id: string): Promise<void> {
     return this.notesService.deleteNote(parseInt(id), req.user.sub);
+  }
+  @Get('search')
+  async searchNotes(@Request() req, @Query('q') query: string) {
+    return this.notesService.searchNotes(query, req.user.sub);
   }
 }

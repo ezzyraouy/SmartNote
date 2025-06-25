@@ -1,9 +1,9 @@
-//notes.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Note } from './note.entity';
 import { User } from '../users/user.entity';
+import { AlgoliaService } from '../algolia/algolia.service';
 
 @Injectable()
 export class NotesService {
@@ -12,17 +12,20 @@ export class NotesService {
     private notesRepository: Repository<Note>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    private algoliaService: AlgoliaService,
   ) {}
 
   async createNote(user: User, title: string, content: string): Promise<Note> {
     const note = this.notesRepository.create({ title, content, user });
-    return await this.notesRepository.save(note);
+    const saved = await this.notesRepository.save(note);
+    await this.algoliaService.saveNote(saved); // ✅ Sync with Algolia
+    return saved;
   }
 
   async getUserNotes(userId: number): Promise<Note[]> {
     return await this.notesRepository.find({
       where: { user: { id: userId } },
-      relations: ['user'], 
+      relations: ['user'],
       order: { updatedAt: 'DESC' },
     });
   }
@@ -46,19 +49,18 @@ export class NotesService {
     const note = await this.getNoteById(id, userId);
     if (updates.title !== undefined) note.title = updates.title;
     if (updates.content !== undefined) note.content = updates.content;
-    return await this.notesRepository.save(note);
+    const updated = await this.notesRepository.save(note);
+    await this.algoliaService.saveNote(updated); // ✅ Sync updated note
+    return updated;
   }
 
   async deleteNote(id: number, userId: number): Promise<void> {
-    const result = await this.notesRepository
-      .createQueryBuilder()
-      .delete()
-      .from(Note)
-      .where('id = :id', { id })
-      .execute();
+    const note = await this.getNoteById(id, userId);
+    await this.notesRepository.delete(id);
+    await this.algoliaService.deleteNote(id); // ✅ Remove from Algolia
+  }
 
-    if (result.affected === 0) {
-      throw new NotFoundException('Note not found');
-    }
+  async searchNotes(query: string, userId: number): Promise<any[]> {
+    return await this.algoliaService.searchNotes(query, userId);
   }
 }

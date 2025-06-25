@@ -8,13 +8,14 @@ environment:
   sdk: ^3.8.1
 
 dependencies:
+  algolia: ^1.0.0
   flutter:
     sdk: flutter
-  http: ^1.4.0             # requêtes HTTP vers backend ou API IA
-  provider: ^6.1.0          # gestion d’état simple
-  flutter_markdown: ^0.6.10 # affichage markdown
-  file_picker: ^6.1.0       # pour ajout de fichiers (PDF, audio...)
-  path_provider: ^2.1.0 
+  http: ^0.13.6          # Downgrade this version
+  provider: ^6.1.0
+  flutter_markdown: ^0.6.10
+  file_picker: ^6.1.0
+  path_provider: ^2.1.0
   flutter_secure_storage: ^8.0.0
   shared_preferences: ^2.2.2
 

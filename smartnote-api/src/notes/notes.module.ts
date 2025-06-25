@@ -6,9 +6,9 @@ import { NotesController } from './notes.controller';
 import { Note } from './note.entity';
 import { UsersModule } from '../users/users.module';
 import { User } from 'src/users/user.entity';
-
+import { AlgoliaModule } from '../algolia/algolia.module';
 @Module({
-  imports: [TypeOrmModule.forFeature([Note, User]), UsersModule],
+  imports: [TypeOrmModule.forFeature([Note, User]), AlgoliaModule,UsersModule],
   controllers: [NotesController],
   providers: [NotesService],
 })

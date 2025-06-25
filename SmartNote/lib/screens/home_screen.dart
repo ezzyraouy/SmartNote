@@ -18,6 +18,9 @@ class _HomeScreenState extends State<HomeScreen> {
   late NotesService _notesService;
   bool _isLoading = true;
   bool _isInitialized = false;
+  List notesToShow = [];
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void didChangeDependencies() {
@@ -32,6 +35,19 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadNotes() async {
     setState(() => _isLoading = true);
     await _notesService.fetchNotes(context);
+    setState(() {
+      notesToShow = _notesService.notes;
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _searchNotes(String query) async {
+    setState(() => _isLoading = true);
+    if (query.isEmpty) {
+      notesToShow = _notesService.notes;
+    } else {
+      notesToShow = await _notesService.searchNotes(context, query);
+    }
     setState(() => _isLoading = false);
   }
 
@@ -54,16 +70,31 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context, listen: false);
-    final notes = context.watch<NotesService>().notes;
     final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'My Notes',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: TextField(
+          controller: _searchController,
+          decoration: const InputDecoration(
+            hintText: 'Search notes...',
+            border: InputBorder.none,
+            hintStyle: TextStyle(color: Colors.white70),
+            prefixIcon: Icon(Icons.search, color: Colors.white70),
+          ),
+          style: const TextStyle(color: Colors.white),
+          onChanged: (value) {
+            _searchQuery = value;
+            _searchNotes(value);
+          },
         ),
         centerTitle: true,
         elevation: 0,
@@ -118,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ? const Center(child: CircularProgressIndicator())
             : RefreshIndicator(
                 onRefresh: _loadNotes,
-                child: notes.isEmpty
+                child: notesToShow.isEmpty
                     ? Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -130,24 +161,27 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'No notes yet',
+                              _searchQuery.isEmpty
+                                  ? 'No notes yet'
+                                  : 'No notes found for "$_searchQuery"',
                               style: theme.textTheme.titleLarge?.copyWith(
                                 color: Colors.grey,
                               ),
                             ),
                             const SizedBox(height: 8),
-                            Text(
-                              'Tap the + button to create your first note',
-                              style: theme.textTheme.bodyMedium,
-                            ),
+                            if (_searchQuery.isEmpty)
+                              Text(
+                                'Tap the + button to create your first note',
+                                style: theme.textTheme.bodyMedium,
+                              ),
                           ],
                         ),
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.all(16),
-                        itemCount: notes.length,
+                        itemCount: notesToShow.length,
                         itemBuilder: (context, index) {
-                          final note = notes[index];
+                          final note = notesToShow[index];
                           return Card(
                             margin: const EdgeInsets.only(bottom: 16),
                             elevation: 2,

@@ -1,4 +1,3 @@
-// lib/services/notes_service.dart
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart'; // For BuildContext
 import 'package:http/http.dart' as http;
@@ -116,6 +115,29 @@ class NotesService with ChangeNotifier {
       await fetchNotes(context);
     } catch (e) {
       throw Exception('Failed to delete note: ${e.toString()}');
+    }
+  }
+
+  Future<List<Note>> searchNotes(BuildContext context, String query) async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final token = authService.token;
+
+    if (token == null) return [];
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/notes/search?q=$query'),
+        headers: _buildHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((json) => Note.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to search notes: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to search notes: ${e.toString()}');
     }
   }
 
