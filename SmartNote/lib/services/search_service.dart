@@ -22,7 +22,7 @@ class SearchService with ChangeNotifier {
     AlgoliaQuery algoliaQuery = index.query(query);
 
     // Add userId filter if needed (adjust field name as per your Algolia records)
-    algoliaQuery = algoliaQuery.facetFilter('userId:$userId');
+    algoliaQuery = algoliaQuery.facetFilter('user_id:$userId');
 
     // Perform the search and get hits
     AlgoliaQuerySnapshot snap = await algoliaQuery.getObjects();

@@ -1,4 +1,3 @@
-//notes.controller.ts
 import {
   Controller,
   Get,
@@ -10,7 +9,9 @@ import {
   UseGuards,
   Request,
   NotFoundException,
-  Query
+  Query,
+  BadRequestException,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { NotesService } from './notes.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -43,26 +44,34 @@ export class NotesController {
     return this.notesService.getUserNotes(req.user.sub);
   }
 
+  // Place the search endpoint BEFORE the dynamic :id route
+  @Get('search')
+  async searchNotes(@Request() req, @Query('q') query: string) {
+    return this.notesService.searchNotes(query, req.user.sub);
+  }
+
   @Get(':id')
-  async getNote(@Request() req, @Param('id') id: string): Promise<Note> {
-    return this.notesService.getNoteById(parseInt(id), req.user.sub);
+  async getNote(
+    @Request() req,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<Note> {
+    return this.notesService.getNoteById(id, req.user.sub);
   }
 
   @Put(':id')
   async updateNote(
     @Request() req,
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() body: { title?: string; content?: string },
   ): Promise<Note> {
-    return this.notesService.updateNote(parseInt(id), req.user.sub, body);
+    return this.notesService.updateNote(id, req.user.sub, body);
   }
 
   @Delete(':id')
-  async deleteNote(@Request() req, @Param('id') id: string): Promise<void> {
-    return this.notesService.deleteNote(parseInt(id), req.user.sub);
-  }
-  @Get('search')
-  async searchNotes(@Request() req, @Query('q') query: string) {
-    return this.notesService.searchNotes(query, req.user.sub);
+  async deleteNote(
+    @Request() req,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<void> {
+    return this.notesService.deleteNote(id, req.user.sub);
   }
 }

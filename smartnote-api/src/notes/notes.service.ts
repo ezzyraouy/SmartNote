@@ -61,6 +61,14 @@ export class NotesService {
   }
 
   async searchNotes(query: string, userId: number): Promise<any[]> {
+    // return await this.notesRepository
+    //   .createQueryBuilder('note')
+    //   .leftJoinAndSelect('note.user', 'user')
+    //   .where('(note.title ILIKE :query OR note.content ILIKE :query)', {
+    //     query: `%${query}%`,
+    //   })
+    //   .orderBy('note.updatedAt', 'DESC')
+    //   .getMany();
     return await this.algoliaService.searchNotes(query, userId);
   }
 }

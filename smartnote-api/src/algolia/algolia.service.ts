@@ -24,12 +24,12 @@ export class AlgoliaService {
     this.index = this.client.initIndex(indexName);
   }
 
-  async saveNote(note: Note) {
+  async saveNote(note: Note) { 
     return this.index.saveObject({
       objectID: note.id.toString(),
       title: note.title,
       content: note.content,
-      userId: note.user.id,
+      user_id: note.user.id,
       createdAt: note.createdAt,
       updatedAt: note.updatedAt,
     });
@@ -41,7 +41,7 @@ export class AlgoliaService {
 
   async searchNotes(query: string, userId: number) {
     const result = await this.index.search(query, {
-      filters: `userId:${userId}`,
+      filters: `user_id:${userId}`,
     });
     return result.hits;
   }
